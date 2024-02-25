@@ -16,6 +16,7 @@ func (cli *CLI) getBalance(address, nodeID string) {
 	balance := 0
 	pubKeyHash := Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+	//利用公钥哈希在UTXO集中找到所有未花费的交易输出
 	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
 
 	for _, out := range UTXOs {
