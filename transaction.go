@@ -19,8 +19,11 @@ const subsidy = 10
 
 // Transaction represents a Bitcoin transaction
 type Transaction struct {
-	ID   []byte
-	Vin  []TXInput
+	//交易的唯一标识，一般情况是教育内容的哈希
+	ID []byte
+	//交易的输入，每个交易输入引用之前交易的输出
+	Vin []TXInput
+	//交易的输出，每个交易输出包含了一定数量的比特币，并指定了可以花费这些比特币的公钥
 	Vout []TXOutput
 }
 

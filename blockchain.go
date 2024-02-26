@@ -29,7 +29,7 @@ func CreateBlockchain(address, nodeID string) *Blockchain {
 		fmt.Println("Blockchain already exists.")
 		os.Exit(1)
 	}
-
+	//最新的区块的哈希
 	var tip []byte
 
 	cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
@@ -84,6 +84,7 @@ func NewBlockchain(nodeID string) *Blockchain {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
+		//通过指定的桶名称获取存储在桶中的最新区块的哈希值，存储在tip
 		tip = b.Get([]byte("l"))
 
 		return nil
@@ -92,6 +93,7 @@ func NewBlockchain(nodeID string) *Blockchain {
 		log.Panic(err)
 	}
 
+	//tip最新区块的哈希值
 	bc := Blockchain{tip, db}
 
 	return &bc
@@ -155,19 +157,25 @@ func (bc *Blockchain) FindTransaction(ID []byte) (Transaction, error) {
 
 // FindUTXO finds all unspent transaction outputs and returns transactions with spent outputs removed
 func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
+	//为花费交易输出
 	UTXO := make(map[string]TXOutputs)
+	//已花费交易输出
 	spentTXOs := make(map[string][]int)
 	bci := bc.Iterator()
 
 	for {
+		//获取一个区块
 		block := bci.Next()
 
+		//每个区块中遍历所有交易
 		for _, tx := range block.Transactions {
 			txID := hex.EncodeToString(tx.ID)
 
 		Outputs:
+			//遍历每个交易的输出，检查是否被花费
 			for outIdx, out := range tx.Vout {
 				// Was the output spent?
+				//如果不为空表示该交易的某个输出已经被花费
 				if spentTXOs[txID] != nil {
 					for _, spentOutIdx := range spentTXOs[txID] {
 						if spentOutIdx == outIdx {
@@ -176,11 +184,14 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 					}
 				}
 
+				//统计所有该txID未被花费的交易
 				outs := UTXO[txID]
 				outs.Outputs = append(outs.Outputs, out)
 				UTXO[txID] = outs
 			}
 
+			//如果不是创世区块交易，我们还需要处理交易的输入
+			//标记当前交易的输入已经被花费
 			if tx.IsCoinbase() == false {
 				for _, in := range tx.Vin {
 					inTxID := hex.EncodeToString(in.Txid)
@@ -189,6 +200,7 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 			}
 		}
 
+		//如果当前区块的前一个区块哈希为空，说明已经到了创世区块，所有区块遍历完成
 		if len(block.PrevBlockHash) == 0 {
 			break
 		}

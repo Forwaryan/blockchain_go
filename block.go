@@ -9,18 +9,26 @@ import (
 
 // Block represents a block in the blockchain
 type Block struct {
-	Timestamp     int64
-	Transactions  []*Transaction
+	//区块的创建时间
+	Timestamp int64
+	//结构体的指针切片，表示区块中的所有交易
+	Transactions []*Transaction
+	//前一个区块的哈希，每个块都包含前一个区块的哈希，形成链式结构
 	PrevBlockHash []byte
-	Hash          []byte
-	Nonce         int
-	Height        int
+	//当前区块的哈希，包含了时间戳、交易、前一个区块的哈希、随机数和高度
+	Hash []byte
+	//随机数，表示满足工作量证明算法的随机数。通过工作量证明算法的计算得到，使得区块的哈希满足特定的条件
+	Nonce int
+	//区块在区块链中的高度
+	Height int
 }
 
 // NewBlock creates and returns Block
 func NewBlock(transactions []*Transaction, prevBlockHash []byte, height int) *Block {
 	block := &Block{time.Now().Unix(), transactions, prevBlockHash, []byte{}, 0, height}
+	//创建工作量证明对象
 	pow := NewProofOfWork(block)
+	//相当于挖矿，在找合适的nonce
 	nonce, hash := pow.Run()
 
 	block.Hash = hash[:]
@@ -41,6 +49,7 @@ func (b *Block) HashTransactions() []byte {
 	for _, tx := range b.Transactions {
 		transactions = append(transactions, tx.Serialize())
 	}
+	//利用当前块的所有交易创建默克尔树得到默克尔根
 	mTree := NewMerkleTree(transactions)
 
 	return mTree.RootNode.Data

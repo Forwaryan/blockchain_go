@@ -8,7 +8,9 @@ import (
 
 // TXOutput represents a transaction output
 type TXOutput struct {
-	Value      int
+	//表示交易输出的金额
+	Value int
+	//表示公钥的哈希，用于锁定输出，只有拥有对应私钥的用户才能解锁并花费这个输出
 	PubKeyHash []byte
 }
 
