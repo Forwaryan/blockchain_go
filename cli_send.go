@@ -25,6 +25,7 @@ func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
 
 	tx := NewUTXOTransaction(&wallet, to, amount, &UTXOSet)
 
+	//mineNow为true表示矿工奖励没有输入只有输出
 	if mineNow {
 		cbTx := NewCoinbaseTX(from, "")
 		txs := []*Transaction{cbTx, tx}

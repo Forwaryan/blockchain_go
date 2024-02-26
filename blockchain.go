@@ -279,6 +279,7 @@ func (bc *Blockchain) GetBlockHashes() [][]byte {
 
 // MineBlock mines a new block with the provided transactions
 func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
+	//最后一个区块的哈希值
 	var lastHash []byte
 	var lastHeight int
 
@@ -331,9 +332,11 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 
 // SignTransaction signs inputs of a Transaction
 func (bc *Blockchain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+	//用来存储每个输入引用的 前一个交易 (ID, Tx)
 	prevTXs := make(map[string]Transaction)
 
 	for _, vin := range tx.Vin {
+		//查找输入引用的前一个交易
 		prevTX, err := bc.FindTransaction(vin.Txid)
 		if err != nil {
 			log.Panic(err)

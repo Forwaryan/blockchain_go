@@ -15,7 +15,9 @@ type UTXOSet struct {
 }
 
 // FindSpendableOutputs finds and returns unspent outputs to reference in inputs
+// 寻找可以用支付的输出，查看金额够不够
 func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int) (int, map[string][]int) {
+	//存储未花费的交易输出
 	unspentOutputs := make(map[string][]int)
 	accumulated := 0
 	db := u.Blockchain.db
@@ -23,12 +25,14 @@ func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int) (int, map[s
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(utxoBucket))
 		c := b.Cursor()
-
+		//遍历所有的交易输出
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			txID := hex.EncodeToString(k)
 			outs := DeserializeOutputs(v)
 
 			for outIdx, out := range outs.Outputs {
+				//如果这个交易输出可以被指定的公钥哈希解锁，并且累计金额小于指定金额，则累加可花费金额
+				//并将这个索引添加到还未花费的映射当中
 				if out.IsLockedWithKey(pubkeyHash) && accumulated < amount {
 					accumulated += out.Value
 					unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)

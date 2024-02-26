@@ -19,7 +19,7 @@ const subsidy = 10
 
 // Transaction represents a Bitcoin transaction
 type Transaction struct {
-	//交易的唯一标识，一般情况是教育内容的哈希
+	//交易的唯一标识，一般情况是交易内容的哈希
 	ID []byte
 	//交易的输入，每个交易输入引用之前交易的输出
 	Vin []TXInput
@@ -69,11 +69,14 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 		}
 	}
 
+	//复制一份交易副本，且去除了每个输入的签名和公钥字段
+	//不是对原始数据进行签名，而是对副本进行签名，因此要copy一份
 	txCopy := tx.TrimmedCopy()
 
 	for inID, vin := range txCopy.Vin {
 		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
 		txCopy.Vin[inID].Signature = nil
+		//证明我们有权使用前一个交易的输出，通过公钥哈希证明
 		txCopy.Vin[inID].PubKey = prevTx.Vout[vin.Vout].PubKeyHash
 
 		dataToSign := fmt.Sprintf("%x\n", txCopy)
@@ -84,7 +87,9 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 		}
 		signature := append(r.Bytes(), s.Bytes()...)
 
+		//将签名设为原始交易的输入的签名
 		tx.Vin[inID].Signature = signature
+		//对原始数据进行签名因此这里还要还原
 		txCopy.Vin[inID].PubKey = nil
 	}
 }
@@ -201,6 +206,7 @@ func NewUTXOTransaction(wallet *Wallet, to string, amount int, UTXOSet *UTXOSet)
 	var outputs []TXOutput
 
 	pubKeyHash := HashPubKey(wallet.PublicKey)
+	//找到pubKeyHash拥有的足额交易输出
 	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount)
 
 	if acc < amount {
@@ -222,6 +228,7 @@ func NewUTXOTransaction(wallet *Wallet, to string, amount int, UTXOSet *UTXOSet)
 
 	// Build a list of outputs
 	from := fmt.Sprintf("%s", wallet.GetAddress())
+	//接收方得到了一个新的交易输出，也即可花费金额多了amount
 	outputs = append(outputs, *NewTXOutput(amount, to))
 	if acc > amount {
 		outputs = append(outputs, *NewTXOutput(acc-amount, from)) // a change
