@@ -292,6 +292,7 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
+		//读取最后一个区块的哈希值
 		lastHash = b.Get([]byte("l"))
 
 		blockData := b.Get(lastHash)
@@ -314,6 +315,7 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 			log.Panic(err)
 		}
 
+		//该处是将最后一个区块的哈希值更新为最新的区块的哈希值
 		err = b.Put([]byte("l"), newBlock.Hash)
 		if err != nil {
 			log.Panic(err)

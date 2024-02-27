@@ -153,6 +153,7 @@ func (u UTXOSet) Update(block *Block) {
 		for _, tx := range block.Transactions {
 			if tx.IsCoinbase() == false {
 				for _, vin := range tx.Vin {
+					//updatedOuts存储所有该交易中未被使用的输出
 					updatedOuts := TXOutputs{}
 					outsBytes := b.Get(vin.Txid)
 					outs := DeserializeOutputs(outsBytes)
@@ -163,12 +164,14 @@ func (u UTXOSet) Update(block *Block) {
 						}
 					}
 
+					//如果该交易的所有输出已经被使用则删除该交易的键值对
 					if len(updatedOuts.Outputs) == 0 {
 						err := b.Delete(vin.Txid)
 						if err != nil {
 							log.Panic(err)
 						}
 					} else {
+						//否则将还没用的输出存储到数据库中
 						err := b.Put(vin.Txid, updatedOuts.Serialize())
 						if err != nil {
 							log.Panic(err)

@@ -52,9 +52,12 @@ type tx struct {
 }
 
 type verzion struct {
-	Version    int
+	//版本号
+	Version int
+	//存储区块链的最新高度
 	BestHeight int
-	AddrFrom   string
+	//存储地址来源
+	AddrFrom string
 }
 
 func commandToBytes(command string) []byte {
@@ -107,11 +110,13 @@ func sendBlock(addr string, b *Block) {
 }
 
 func sendData(addr string, data []byte) {
+	//和网络建立链接
 	conn, err := net.Dial(protocol, addr)
 	if err != nil {
 		fmt.Printf("%s is not available\n", addr)
 		var updatedNodes []string
 
+		//删除链接不上的网站节点
 		for _, node := range knownNodes {
 			if node != addr {
 				updatedNodes = append(updatedNodes, node)
@@ -124,6 +129,7 @@ func sendData(addr string, data []byte) {
 	}
 	defer conn.Close()
 
+	//将数据发送到网络链接
 	_, err = io.Copy(conn, bytes.NewReader(data))
 	if err != nil {
 		log.Panic(err)
@@ -152,6 +158,7 @@ func sendGetData(address, kind string, id []byte) {
 	sendData(address, request)
 }
 
+// 将交易数据发送到指定的地址
 func sendTx(addr string, tnx *Transaction) {
 	data := tx{nodeAddress, tnx.Serialize()}
 	payload := gobEncode(data)
@@ -179,9 +186,10 @@ func handleAddr(request []byte) {
 	if err != nil {
 		log.Panic(err)
 	}
-
+	//将新节点加入到已知节点的列表中
 	knownNodes = append(knownNodes, payload.AddrList...)
 	fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
+	//确保所有节点都有相同的、最新的区块链数据。保持自身的区块链数据与网络中其他节点同步。
 	requestBlocks()
 }
 
@@ -396,6 +404,7 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 	fmt.Printf("Received %s command\n", command)
 
 	switch command {
+	//新的地址加入
 	case "addr":
 		handleAddr(request)
 	case "block":
@@ -421,6 +430,7 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 func StartServer(nodeID, minerAddress string) {
 	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
 	miningAddress = minerAddress
+	//监听网络连接
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
 		log.Panic(err)
@@ -429,6 +439,7 @@ func StartServer(nodeID, minerAddress string) {
 
 	bc := NewBlockchain(nodeID)
 
+	//向其他节点发送版本信息，避免网络中出现循环发送给自己版本信息的情况
 	if nodeAddress != knownNodes[0] {
 		sendVersion(knownNodes[0], bc)
 	}
@@ -438,6 +449,7 @@ func StartServer(nodeID, minerAddress string) {
 		if err != nil {
 			log.Panic(err)
 		}
+		//保持连接 通过协程处理 查看新的请求
 		go handleConnection(conn, bc)
 	}
 }
