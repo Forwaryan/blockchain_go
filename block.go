@@ -43,6 +43,7 @@ func NewGenesisBlock(coinbase *Transaction) *Block {
 }
 
 // HashTransactions returns a hash of the transactions in the block
+// 将交所有交易哈希然后建立默克尔树
 func (b *Block) HashTransactions() []byte {
 	var transactions [][]byte
 
