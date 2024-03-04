@@ -337,7 +337,7 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 		log.Panic(err)
 	}
 
-	//格局交易和最后一个区块的哈希值创建一个新的区块
+	//根据交易和最后一个区块的哈希值创建一个新的区块
 	newBlock := NewBlock(transactions, lastHash, lastHeight+1)
 
 	//将该块放入到区块链中

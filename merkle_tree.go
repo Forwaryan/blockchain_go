@@ -11,7 +11,7 @@ type MerkleTree struct {
 
 // MerkleNode represent a Merkle tree node
 type MerkleNode struct {
-	//左右子节点，每个子节点都是由器子节点通过某种哈希函数计算得到
+	//左右子节点，每个子节点都是由其子节点通过某种哈希函数计算得到
 	Left  *MerkleNode
 	Right *MerkleNode
 	//存储节点数据，叶子结点中Data是输入数据的哈希
